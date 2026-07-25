@@ -182,7 +182,11 @@ test("auth_login_with_token_writes_0600_credentials_and_whoami_uses_them", async
 
     const credPath = join(configDirOf(home), "credentials.toml");
     assert.ok(existsSync(credPath), "credentials.toml must exist after login");
-    assert.equal(statSync(credPath).mode & 0o777, 0o600, "credentials.toml must be 0600");
+    if (process.platform !== "win32") {
+      // POSIX file modes do not exist on Windows (the writer guards its
+      // chmod the same way) — assert 0600 only where the OS can express it.
+      assert.equal(statSync(credPath).mode & 0o777, 0o600, "credentials.toml must be 0600");
+    }
     assert.match(readFileSync(credPath, "utf8"), new RegExp(KEY_FILE));
 
     // With no env key, whoami must fall back to the stored credential.
