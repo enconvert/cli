@@ -1,0 +1,390 @@
+# Release pipeline for the enconvert CLI — tag v*.*.* and this workflow:
+#   1. builds the 7 standalone binaries (bun build --compile, one Linux runner)
+#   2. re-signs the darwin binaries (Developer ID when certs exist, ad-hoc otherwise)
+#   3. packages tar.gz/zip archives + sha256 checksums + build provenance
+#   4. creates the GitHub Release (draft: false)
+#   5. rewrites the Homebrew cask (enconvert/homebrew-tap) and the Scoop
+#      manifest (enconvert/scoop-bucket)
+#   6. uploads install.sh + a latest-version pointer as release assets
+#
+# ── AUTHORITATIVE PATH ────────────────────────────────────────────────────────
+# THIS workflow is the release pipeline of record. .goreleaser.yaml exists for
+# local snapshot builds and as a documented fallback; if the two ever disagree
+# on archive names, this workflow's names win:
+#   enconvert_<ver>_{darwin,linux,windows}_{x64,arm64}[_musl].{tar.gz,zip}
+#   enconvert_<ver>_checksums.txt
+#
+# ── AUTH MODEL (three mechanisms — read this) ─────────────────────────────────
+#   * GitHub Release + provenance → this workflow's own GITHUB_TOKEN, via the
+#     permissions block below (contents: write for the release, id-token +
+#     attestations for actions/attest-build-provenance). No PAT.
+#   * Tap/bucket pushes → secrets.TAP_GITHUB_TOKEN: a fine-grained PAT with
+#     Contents: read/write on enconvert/homebrew-tap AND enconvert/scoop-bucket
+#     (the default GITHUB_TOKEN cannot push to sibling repos).
+#   * Apple signing → OPTIONAL secrets APPLE_CERTIFICATE_PEM,
+#     APPLE_PRIVATE_KEY_PEM, APPLE_APP_STORE_CONNECT_API_KEY_JSON. Releases
+#     work before these exist: the darwin binaries are then AD-HOC signed
+#     (arm64 macOS SIGKILLs any Mach-O with no signature at all — ad-hoc is
+#     the floor, Developer ID + notarization is the goal).
+#
+# ── One-time setup this workflow DEPENDS ON ───────────────────────────────────
+#   1. Repos enconvert/homebrew-tap (empty, with a Casks/ dir) and
+#      enconvert/scoop-bucket (empty, with a bucket/ dir) exist and are public.
+#   2. Repo secret TAP_GITHUB_TOKEN (see auth model above).
+#   3. (later) Apple Developer ID Application cert exported as PEM pair +
+#      App Store Connect API key JSON, as the three APPLE_* secrets.
+#   4. get.enconvert.com (DO droplet behind Cloudflare) serves copies of
+#      install.sh, install.ps1 and latest-version. Deploy there is OUT of CI's
+#      hands: after a release, copy the three files from the release assets to
+#      the droplet (or point the vhost at the GitHub release URLs). That host
+#      MUST be exempt from Cloudflare Bot Fight Mode / Managed Challenge — a
+#      challenged `curl | sh` pipes an HTML blob into the user's shell
+#      (2026-07-16 api.enconvert.com incident).
+#   5. Winget is NOT automated here — first submission of Enconvert.Cli to
+#      microsoft/winget-pkgs is a manual komac PR (see .goreleaser.yaml notes).
+#
+# Consider pinning third-party actions to full commit SHAs once the flow settles.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # cut a release with:  git tag v1.0.0 && git push origin v1.0.0
+
+permissions:
+  contents: write # create the GitHub Release + upload assets
+  id-token: write # OIDC for build provenance
+  attestations: write # actions/attest-build-provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      # secrets are not directly usable in step-level `if:`; surface presence
+      # as booleans once, here.
+      HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE_PEM != '' && secrets.APPLE_PRIVATE_KEY_PEM != '' }}
+      HAS_ASC_KEY: ${{ secrets.APPLE_APP_STORE_CONNECT_API_KEY_JSON != '' }}
+      HAS_TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG package.json=$PKG"
+          test "$TAG" = "$PKG" || { echo "::error::tag $TAG != package.json $PKG"; exit 1; }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      # Bun is pinned to an EXACT version, never latest: oven-sh/bun#29120
+      # (v1.3.12) emitted a truncated darwin-arm64 SuperBlob — the kernel
+      # answers a malformed signature with SIGKILL / exit 137 on Apple Silicon.
+      # Bump this pin only after testing the produced darwin binaries on real
+      # Apple Silicon hardware.
+      - name: Setup Bun (pinned)
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and test
+        run: |
+          npm run typecheck
+          npm test
+
+      # Completions ship inside every archive. Guarded because the generator
+      # lands with the completion command slice.
+      - name: Generate shell completions
+        run: |
+          if [ -f scripts/generate-completions.ts ]; then
+            npm run gen:completions
+          else
+            echo "::warning::scripts/generate-completions.ts missing — archives ship without completions"
+          fi
+
+      # Builds all 7 targets from this single Linux runner (the decisive reason
+      # bun was chosen over Node SEA/pkg/nexe/deno — musl targets included).
+      # BUN_NO_CODESIGN_MACHO_BINARY=1 is set inside the script for darwin
+      # targets; the signing steps below put a real signature back.
+      - name: Build binaries (7 targets)
+        run: npx tsx scripts/build-binaries.ts
+
+      # ── Darwin signing ──────────────────────────────────────────────────────
+      # rcodesign (via indygreg/apple-code-sign-action) signs Mach-O binaries
+      # from Linux — no Mac runner needed. Two paths:
+      #   * Developer ID (HAS_APPLE_CERT): sign with the real cert, then
+      #     notarize zips of the binaries when the ASC key is also present.
+      #   * No cert yet: AD-HOC sign. This is NOT optional cosmetics — the
+      #     arm64 macOS kernel SIGKILLs unsigned binaries, and the build step
+      #     stripped bun's own (historically buggy) signature.
+      - name: Write Apple signing material to disk
+        if: env.HAS_APPLE_CERT == 'true'
+        env:
+          APPLE_CERTIFICATE_PEM: ${{ secrets.APPLE_CERTIFICATE_PEM }}
+          APPLE_PRIVATE_KEY_PEM: ${{ secrets.APPLE_PRIVATE_KEY_PEM }}
+          APPLE_APP_STORE_CONNECT_API_KEY_JSON: ${{ secrets.APPLE_APP_STORE_CONNECT_API_KEY_JSON }}
+        run: |
+          umask 077
+          printf '%s\n%s\n' "$APPLE_CERTIFICATE_PEM" "$APPLE_PRIVATE_KEY_PEM" > /tmp/apple-signing.pem
+          if [ "$HAS_ASC_KEY" = "true" ]; then
+            printf '%s' "$APPLE_APP_STORE_CONNECT_API_KEY_JSON" > /tmp/asc-api-key.json
+          fi
+
+      - name: Sign darwin-arm64 (Developer ID)
+        if: env.HAS_APPLE_CERT == 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: dist-bin/bun-darwin-arm64/enconvert
+          pem_file: /tmp/apple-signing.pem
+          sign: true
+          notarize: false
+
+      - name: Sign darwin-x64 (Developer ID)
+        if: env.HAS_APPLE_CERT == 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: dist-bin/bun-darwin-x64/enconvert
+          pem_file: /tmp/apple-signing.pem
+          sign: true
+          notarize: false
+
+      # Notarization takes a zip (notarytool cannot ingest a bare binary), and
+      # a flat Mach-O cannot be stapled — Gatekeeper fetches the ticket online,
+      # which is fine for a CLI. staple stays false on purpose.
+      - name: Notarize darwin binaries
+        if: env.HAS_APPLE_CERT == 'true' && env.HAS_ASC_KEY == 'true'
+        run: |
+          for t in bun-darwin-arm64 bun-darwin-x64; do
+            (cd "dist-bin/$t" && zip -q "/tmp/notarize-$t.zip" enconvert)
+          done
+
+      - name: Notarize darwin-arm64 (submit)
+        if: env.HAS_APPLE_CERT == 'true' && env.HAS_ASC_KEY == 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: /tmp/notarize-bun-darwin-arm64.zip
+          app_store_connect_api_key_json_file: /tmp/asc-api-key.json
+          sign: false
+          notarize: true
+          staple: false
+
+      - name: Notarize darwin-x64 (submit)
+        if: env.HAS_APPLE_CERT == 'true' && env.HAS_ASC_KEY == 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: /tmp/notarize-bun-darwin-x64.zip
+          app_store_connect_api_key_json_file: /tmp/asc-api-key.json
+          sign: false
+          notarize: true
+          staple: false
+
+      - name: Ad-hoc sign darwin-arm64 (no cert configured)
+        if: env.HAS_APPLE_CERT != 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: dist-bin/bun-darwin-arm64/enconvert
+          sign: true
+          notarize: false
+
+      - name: Ad-hoc sign darwin-x64 (no cert configured)
+        if: env.HAS_APPLE_CERT != 'true'
+        uses: indygreg/apple-code-sign-action@v1
+        with:
+          input_path: dist-bin/bun-darwin-x64/enconvert
+          sign: true
+          notarize: false
+
+      - name: Warn about unsigned release
+        if: env.HAS_APPLE_CERT != 'true'
+        run: |
+          echo "::warning::APPLE_CERTIFICATE_PEM / APPLE_PRIVATE_KEY_PEM not set — darwin binaries are AD-HOC signed only. They run, but Gatekeeper shows the unidentified-developer prompt on first launch. Add the Apple secrets to ship Developer ID signed + notarized binaries."
+
+      # ── Package: archives + checksums ───────────────────────────────────────
+      # Naming contract (mirrored by install.sh, install.ps1, the cask and the
+      # Scoop manifest): enconvert_<ver>_<os>_<arch>[_musl].{tar.gz,zip}
+      - name: Package archives and checksums
+        run: |
+          set -euo pipefail
+          VER="${GITHUB_REF_NAME#v}"
+          mkdir -p dist-archives
+          declare -A NAMES=(
+            [bun-darwin-arm64]="darwin_arm64"
+            [bun-darwin-x64]="darwin_x64"
+            [bun-linux-x64]="linux_x64"
+            [bun-linux-arm64]="linux_arm64"
+            [bun-linux-x64-musl]="linux_x64_musl"
+            [bun-linux-arm64-musl]="linux_arm64_musl"
+            [bun-windows-x64]="windows_x64"
+          )
+          for target in "${!NAMES[@]}"; do
+            plat="${NAMES[$target]}"
+            if [ "$target" = "bun-windows-x64" ]; then
+              (cd "dist-bin/$target" && zip -qr "$GITHUB_WORKSPACE/dist-archives/enconvert_${VER}_${plat}.zip" .)
+            else
+              tar -czf "dist-archives/enconvert_${VER}_${plat}.tar.gz" -C "dist-bin/$target" .
+            fi
+          done
+          (cd dist-archives && sha256sum enconvert_"${VER}"_* > "enconvert_${VER}_checksums.txt")
+          ls -la dist-archives
+          cat "dist-archives/enconvert_${VER}_checksums.txt"
+
+      # SLSA build provenance for every archive — verifiable with
+      #   gh attestation verify <file> --repo enconvert/cli
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist-archives/enconvert_*.tar.gz
+            dist-archives/enconvert_*.zip
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "enconvert $VER" \
+            --generate-notes \
+            --notes "Standalone binaries for macOS, Linux (glibc + musl) and Windows. Verify with \`enconvert_${VER}_checksums.txt\` or \`gh attestation verify --repo enconvert/cli\`. See CHANGELOG.md for details." \
+            dist-archives/*
+
+      # install.sh + the latest-version pointer double as release assets AND as
+      # the files get.enconvert.com serves (see one-time setup #4 — the droplet
+      # copy is deployed outside CI). install.sh and the update notifier both
+      # read latest-version, so it must contain the bare semver, newline, and
+      # nothing else.
+      - name: Upload install script and latest-version pointer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          printf '%s\n' "$VER" > latest-version
+          gh release upload "$GITHUB_REF_NAME" install.sh install.ps1 latest-version
+
+      # ── Homebrew tap + Scoop bucket (scripted commits — the chosen path) ────
+      # Decision per the plan: ONE mechanism, implemented fully. We commit the
+      # manifests ourselves instead of running GoReleaser's publish phase, so
+      # the whole pipeline has a single build path and the manifests are plain
+      # files anyone can hotfix in the tap/bucket repos.
+      - name: Update Homebrew tap and Scoop bucket
+        if: env.HAS_TAP_TOKEN == 'true'
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          VER="${GITHUB_REF_NAME#v}"
+          SUMS="dist-archives/enconvert_${VER}_checksums.txt"
+          sha_for() { awk -v f="enconvert_${VER}_$1" '$2 == f { print $1 }' "$SUMS"; }
+
+          SHA_DARWIN_ARM="$(sha_for darwin_arm64.tar.gz)"
+          SHA_DARWIN_X64="$(sha_for darwin_x64.tar.gz)"
+          SHA_LINUX_ARM="$(sha_for linux_arm64.tar.gz)"
+          SHA_LINUX_X64="$(sha_for linux_x64.tar.gz)"
+          SHA_WINDOWS="$(sha_for windows_x64.zip)"
+
+          git config --global user.name "enconvert-release-bot"
+          git config --global user.email "support@enconvert.com"
+
+          # ── Homebrew cask (macOS + Linux; cask NOT formula — precompiled
+          # upstream binaries are cask territory per Homebrew's own guidance,
+          # and Homebrew 5+ supports Linux casks). Note the glibc archives are
+          # used for Linux; musl users get install.sh.
+          git clone --depth 1 "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/enconvert/homebrew-tap.git" /tmp/homebrew-tap
+          mkdir -p /tmp/homebrew-tap/Casks
+          # Unquoted heredoc: $SHELL_VARS interpolate now; ruby's #{version}
+          # survives because # is not special to heredoc expansion.
+          cat > /tmp/homebrew-tap/Casks/enconvert.rb <<EOF
+          cask "enconvert" do
+            version "$VER"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/enconvert/cli/releases/download/v#{version}/enconvert_#{version}_darwin_arm64.tar.gz"
+                sha256 "$SHA_DARWIN_ARM"
+              end
+              on_intel do
+                url "https://github.com/enconvert/cli/releases/download/v#{version}/enconvert_#{version}_darwin_x64.tar.gz"
+                sha256 "$SHA_DARWIN_X64"
+              end
+            end
+            on_linux do
+              on_arm do
+                url "https://github.com/enconvert/cli/releases/download/v#{version}/enconvert_#{version}_linux_arm64.tar.gz"
+                sha256 "$SHA_LINUX_ARM"
+              end
+              on_intel do
+                url "https://github.com/enconvert/cli/releases/download/v#{version}/enconvert_#{version}_linux_x64.tar.gz"
+                sha256 "$SHA_LINUX_X64"
+              end
+            end
+
+            name "enconvert"
+            desc "Official Enconvert CLI — convert files, render URLs, and extract web data"
+            homepage "https://enconvert.com/cli"
+
+            binary "enconvert"
+
+            zap trash: [
+              "~/.cache/enconvert",
+              "~/.config/enconvert",
+              "~/.enconvert",
+              "~/.local/state/enconvert",
+            ]
+          end
+          EOF
+          git -C /tmp/homebrew-tap add Casks/enconvert.rb
+          git -C /tmp/homebrew-tap commit -m "enconvert $VER" || echo "cask unchanged"
+          git -C /tmp/homebrew-tap push
+
+          # ── Scoop manifest. checkver/autoupdate are included so the bucket
+          # can also self-update from checksums.txt if a release is ever cut
+          # without this workflow (quoted heredoc: \$version etc. must reach
+          # Scoop literally, so placeholders are substituted with sed after).
+          git clone --depth 1 "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/enconvert/scoop-bucket.git" /tmp/scoop-bucket
+          mkdir -p /tmp/scoop-bucket/bucket
+          cat > /tmp/scoop-bucket/bucket/enconvert.json <<'EOF'
+          {
+              "version": "__VERSION__",
+              "description": "Official Enconvert CLI — convert files, render URLs, and extract web data from your terminal",
+              "homepage": "https://enconvert.com/cli",
+              "license": "MIT",
+              "architecture": {
+                  "64bit": {
+                      "url": "https://github.com/enconvert/cli/releases/download/v__VERSION__/enconvert___VERSION___windows_x64.zip",
+                      "hash": "__HASH__"
+                  }
+              },
+              "bin": "enconvert.exe",
+              "checkver": {
+                  "github": "https://github.com/enconvert/cli"
+              },
+              "autoupdate": {
+                  "architecture": {
+                      "64bit": {
+                          "url": "https://github.com/enconvert/cli/releases/download/v$version/enconvert_$version_windows_x64.zip"
+                      }
+                  },
+                  "hash": {
+                      "url": "https://github.com/enconvert/cli/releases/download/v$version/enconvert_$version_checksums.txt"
+                  }
+              }
+          }
+          EOF
+          sed -i "s/__VERSION__/${VER}/g; s/__HASH__/${SHA_WINDOWS}/g" /tmp/scoop-bucket/bucket/enconvert.json
+          git -C /tmp/scoop-bucket add bucket/enconvert.json
+          git -C /tmp/scoop-bucket commit -m "enconvert $VER" || echo "manifest unchanged"
+          git -C /tmp/scoop-bucket push
+
+      - name: Warn when tap token is missing
+        if: env.HAS_TAP_TOKEN != 'true'
+        run: |
+          echo "::warning::TAP_GITHUB_TOKEN not set — Homebrew tap and Scoop bucket were NOT updated for this release. Add the fine-grained PAT (contents:write on enconvert/homebrew-tap + enconvert/scoop-bucket) and re-run this job, or update the manifests by hand."

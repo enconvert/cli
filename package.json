@@ -1,0 +1,64 @@
+{
+  "name": "@enconvert/cli",
+  "version": "1.0.0",
+  "description": "The official Enconvert CLI. Convert files, render URLs, and extract web data from your terminal.",
+  "keywords": [
+    "enconvert",
+    "cli",
+    "convert",
+    "pdf",
+    "screenshot",
+    "markdown",
+    "scrape",
+    "crawl",
+    "file-conversion",
+    "html-to-pdf",
+    "url-to-pdf"
+  ],
+  "license": "MIT",
+  "author": "Enconvert <support@enconvert.com> (https://enconvert.com)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "bin": {
+    "enconvert": "./dist/enconvert.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enconvert/cli.git"
+  },
+  "homepage": "https://enconvert.com/cli",
+  "bugs": {
+    "url": "https://github.com/enconvert/cli/issues"
+  },
+  "scripts": {
+    "build": "node scripts/sync-version.mjs && tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "gen:routes": "tsx scripts/generate-routes.ts",
+    "gen:completions": "tsx scripts/generate-completions.ts",
+    "lint": "publint",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@bomb.sh/tab": "0.0.21",
+    "@commander-js/extra-typings": "^15.0.0",
+    "@inquirer/prompts": "^8.5.2",
+    "@types/node": "^22.0.0",
+    "commander": "^15.0.0",
+    "picocolors": "^1.1.1",
+    "publint": "^0.3.0",
+    "smol-toml": "^1.7.0",
+    "tsdown": "~0.22.14",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "undici": "^8.9.0",
+    "yocto-spinner": "^1.2.2",
+    "zod": "^4.4.3"
+  }
+}

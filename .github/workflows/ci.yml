@@ -1,0 +1,89 @@
+# CI for the enconvert CLI — typecheck, build, test, package-lint on Linux and
+# Windows, plus a non-blocking check that the checked-in generated route tables
+# still match the production gateway's OpenAPI schema.
+#
+# AUTH MODEL: none. Every job runs with the default read-only GITHUB_TOKEN and
+# needs no secrets. The routes-drift job makes ONE unauthenticated GET to
+# https://api.enconvert.com/openapi.json (a public, unmetered metadata route).
+#
+# One-time setup: none beyond the repo existing. If api.enconvert.com is ever
+# put behind Cloudflare Managed Challenge again (2026-07-16 incident), the
+# drift job will fail on an HTML challenge page — it is continue-on-error for
+# exactly this class of flakiness, so it can warn without blocking merges.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # publint validates the published package shape (bin, exports, files) —
+      # cheap insurance that `npm i -g @enconvert/cli` keeps working.
+      - name: Lint package
+        run: npx publint
+
+  # Regenerate src/api/routes.generated.ts + api-index.generated.* against the
+  # LIVE production OpenAPI schema and fail on any diff. Non-blocking by design:
+  # a gateway deploy that adds an endpoint should nag us to regenerate, not
+  # freeze unrelated CLI PRs.
+  routes-drift:
+    name: routes drift vs production (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Regenerate route tables from production OpenAPI
+        env:
+          # generate-routes.ts defaults to production; pinned here so a local
+          # ENCONVERT_API_URL habit never leaks into what this job checks.
+          ENCONVERT_API_URL: https://api.enconvert.com
+        run: npm run gen:routes
+
+      - name: Fail if generated tables drifted
+        run: git diff --exit-code src/api/

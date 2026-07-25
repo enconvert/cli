@@ -1,0 +1,1740 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "summary": "Root",
+    "tags": [
+      "root"
+    ],
+    "params": []
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "summary": "Health Check",
+    "tags": [
+      "system"
+    ],
+    "params": []
+  },
+  {
+    "method": "POST",
+    "path": "/internal/cleanup-file",
+    "summary": "Cleanup File",
+    "tags": [],
+    "params": []
+  },
+  {
+    "method": "POST",
+    "path": "/internal/rotate-usage-period",
+    "summary": "Rotate Usage Period",
+    "tags": [],
+    "params": []
+  },
+  {
+    "method": "GET",
+    "path": "/v1/",
+    "summary": "V1 Info",
+    "tags": [
+      "v1",
+      "v1-info"
+    ],
+    "params": []
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auth/branding",
+    "summary": "Get Branding",
+    "tags": [
+      "v1",
+      "v1-auth"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/refresh",
+    "summary": "Refresh Token",
+    "tags": [
+      "v1",
+      "v1-auth"
+    ],
+    "params": [
+      "refresh_token"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/token",
+    "summary": "Exchange Token",
+    "tags": [
+      "v1",
+      "v1-auth"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "turnstile_token"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auth/verify",
+    "summary": "Verify Auth",
+    "tags": [
+      "v1",
+      "v1-auth"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/anything-to-markdown",
+    "summary": "Anything To Markdown",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/anything-to-pdf",
+    "summary": "Anything To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/convert/batch/{batch_id}",
+    "summary": "Get Batch Status Endpoint",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "batch_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/compress-image",
+    "summary": "Compress Image",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "target_size_kb",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/csv-to-json",
+    "summary": "Csv To Json",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/csv-to-xml",
+    "summary": "Csv To Xml",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/doc-to-pdf",
+    "summary": "Doc To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/convert/download/{object_key}",
+    "summary": "Download File",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "object_key",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/excel-to-pdf",
+    "summary": "Excel To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/heic-to-jpeg",
+    "summary": "Heic To Jpeg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/heic-to-png",
+    "summary": "Heic To Png",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/heic-to-svg",
+    "summary": "Heic To Svg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/heic-to-webp",
+    "summary": "Heic To Webp",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/html-to-pdf",
+    "summary": "Html To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/jpeg-to-heic",
+    "summary": "Jpeg To Heic",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/jpeg-to-png",
+    "summary": "Jpeg To Png",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/jpeg-to-svg",
+    "summary": "Jpeg To Svg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/jpeg-to-webp",
+    "summary": "Jpeg To Webp",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/json-to-csv",
+    "summary": "Json To Csv",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/json-to-toml",
+    "summary": "Json To Toml",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/json-to-xml",
+    "summary": "Json To Xml",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/json-to-yaml",
+    "summary": "Json To Yaml",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/markdown-to-html",
+    "summary": "Markdown To Html",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/markdown-to-pdf",
+    "summary": "Markdown To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/numbers-to-pdf",
+    "summary": "Numbers To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/ocr",
+    "summary": "Extract Text Ocr",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/odp-to-pdf",
+    "summary": "Odp To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/ods-to-pdf",
+    "summary": "Ods To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/odt-to-pdf",
+    "summary": "Odt To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/ots-to-pdf",
+    "summary": "Ots To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/pages-to-pdf",
+    "summary": "Pages To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/pdf-to-jpeg",
+    "summary": "Pdf To Jpeg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/png-to-heic",
+    "summary": "Png To Heic",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/png-to-jpeg",
+    "summary": "Png To Jpeg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/png-to-svg",
+    "summary": "Png To Svg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/png-to-webp",
+    "summary": "Png To Webp",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/ppt-to-pdf",
+    "summary": "Ppt To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id",
+      "pdf_options"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/speech-to-text",
+    "summary": "Transcribe Audio",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/convert/status/{job_id}",
+    "summary": "Get Conversion Status",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/svg-to-heic",
+    "summary": "Svg To Heic",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/svg-to-jpeg",
+    "summary": "Svg To Jpeg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "width",
+      "height",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/svg-to-png",
+    "summary": "Svg To Png",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "width",
+      "height",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/svg-to-webp",
+    "summary": "Svg To Webp",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "width",
+      "height",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/text-to-speech",
+    "summary": "Synthesize Speech",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/thumbnail",
+    "summary": "Generate Thumbnail",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/toml-to-json",
+    "summary": "Toml To Json",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/url-to-markdown",
+    "summary": "Url To Markdown",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/url-to-pdf",
+    "summary": "Url To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/url-to-screenshot",
+    "summary": "Url To Screenshot",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/video",
+    "summary": "Transcode Video",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/webp-to-heic",
+    "summary": "Webp To Heic",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/webp-to-jpeg",
+    "summary": "Webp To Jpeg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/webp-to-png",
+    "summary": "Webp To Png",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/webp-to-svg",
+    "summary": "Webp To Svg",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/website-to-pdf",
+    "summary": "Website To Pdf",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/website-to-screenshot",
+    "summary": "Website To Screenshot",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/xml-to-csv",
+    "summary": "Xml To Csv",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/xml-to-json",
+    "summary": "Xml To Json",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/convert/yaml-to-json",
+    "summary": "Yaml To Json",
+    "tags": [
+      "v1",
+      "v1-convert"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "file",
+      "output_filename",
+      "direct_download",
+      "job_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/extension/capture",
+    "summary": "Upload Capture",
+    "tags": [
+      "v1",
+      "v1-extension"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "capture_type",
+      "source_url",
+      "page_title",
+      "file_size",
+      "output_filename",
+      "store_file",
+      "file"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/whoami",
+    "summary": "Whoami",
+    "tags": [
+      "v1",
+      "v1-info"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/widget/{widget_id}/config",
+    "summary": "Get Widget Config",
+    "tags": [
+      "v1",
+      "v1-widget"
+    ],
+    "params": [
+      "widget_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/widget/{widget_id}/refresh",
+    "summary": "Refresh Widget Token",
+    "tags": [
+      "v1",
+      "v1-widget"
+    ],
+    "params": [
+      "widget_id"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v1/widget/{widget_id}/token",
+    "summary": "Get Widget Token",
+    "tags": [
+      "v1",
+      "v1-widget"
+    ],
+    "params": [
+      "widget_id"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "turnstile_token"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/",
+    "summary": "V2 Info",
+    "tags": [
+      "v2",
+      "v2-info"
+    ],
+    "params": []
+  },
+  {
+    "method": "POST",
+    "path": "/v2/discover",
+    "summary": "Discover",
+    "tags": [
+      "v2",
+      "v2-discover"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "url",
+      "mode",
+      "max_urls",
+      "max_depth",
+      "include_patterns",
+      "exclude_patterns",
+      "same_domain_only",
+      "respect_robots",
+      "render_js"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/distill",
+    "summary": "Distill",
+    "tags": [
+      "v2",
+      "v2-distill"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "urls",
+      "discover_from",
+      "schema",
+      "prompt",
+      "css_schema",
+      "wait_for",
+      "wait_timeout_ms",
+      "headers",
+      "cookies",
+      "respect_robots"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/ingest",
+    "summary": "Ingest List",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "skip",
+      "limit",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/ingest",
+    "summary": "Ingest",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "mode",
+      "url",
+      "urls",
+      "max_pages",
+      "max_depth",
+      "same_domain_only",
+      "include_patterns",
+      "exclude_patterns",
+      "respect_robots",
+      "wait_for",
+      "wait_timeout_ms",
+      "chunk",
+      "webhook_url"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/v2/ingest/{job_id}",
+    "summary": "Ingest Cancel",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/ingest/{job_id}",
+    "summary": "Ingest Status",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/ingest/{job_id}/retry-webhook",
+    "summary": "Ingest Retry Webhook",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/ingest/files",
+    "summary": "Ingest Files",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "multipart/form-data",
+    "bodyFields": [
+      "files",
+      "max_words",
+      "sentence_overlap",
+      "webhook_url"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/ingest/webhook-secret",
+    "summary": "Ingest Webhook Secret",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/ingest/webhook-secret/rotate",
+    "summary": "Ingest Webhook Secret Rotate",
+    "tags": [
+      "v2",
+      "v2-ingest"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/lookup",
+    "summary": "Lookup",
+    "tags": [
+      "v2",
+      "v2-lookup"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "query",
+      "category",
+      "country",
+      "locale",
+      "time_filter",
+      "num_results",
+      "page",
+      "location",
+      "autocorrect",
+      "perceive_top",
+      "enrich"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/perceive",
+    "summary": "Perceive",
+    "tags": [
+      "v2",
+      "v2-perceive"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "outputs",
+      "extract",
+      "schema",
+      "wait_for",
+      "wait_timeout_ms",
+      "js_code",
+      "viewport",
+      "headers",
+      "cookies",
+      "auth",
+      "proxy_url",
+      "geolocation",
+      "action_chain",
+      "cache_mode",
+      "pdf_options",
+      "block_resources",
+      "respect_robots",
+      "mobile",
+      "url"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/perceive/{operation_id}",
+    "summary": "Perceive Status",
+    "tags": [
+      "v2",
+      "v2-perceive"
+    ],
+    "params": [
+      "operation_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/perceive/batch",
+    "summary": "Perceive Batch",
+    "tags": [
+      "v2",
+      "v2-perceive"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "urls",
+      "options",
+      "output_mode"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/v2/perceive/batch/{job_id}",
+    "summary": "Perceive Batch Cancel",
+    "tags": [
+      "v2",
+      "v2-perceive"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/perceive/batch/{job_id}",
+    "summary": "Perceive Batch Status",
+    "tags": [
+      "v2",
+      "v2-perceive"
+    ],
+    "params": [
+      "job_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/watch",
+    "summary": "List Watch",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "skip",
+      "limit",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/v2/watch",
+    "summary": "Create Watch",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "url",
+      "frequency_minutes",
+      "diff_mode",
+      "track_fields",
+      "webhook_url",
+      "notify_email"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/v2/watch/{watcher_id}",
+    "summary": "Delete Watch",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "watcher_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/watch/{watcher_id}",
+    "summary": "Get Watch",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "watcher_id",
+      "X-API-Key",
+      "authorization"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/v2/watch/{watcher_id}",
+    "summary": "Update Watch",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "watcher_id",
+      "X-API-Key",
+      "authorization"
+    ],
+    "bodyContentType": "application/json",
+    "bodyFields": [
+      "frequency_minutes",
+      "diff_mode",
+      "track_fields",
+      "webhook_url",
+      "notify_email",
+      "status"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v2/watch/{watcher_id}/snapshots",
+    "summary": "List Watch Snapshots",
+    "tags": [
+      "v2",
+      "v2-watch"
+    ],
+    "params": [
+      "watcher_id",
+      "limit",
+      "X-API-Key",
+      "authorization"
+    ]
+  }
+]

@@ -1,0 +1,161 @@
+# GoReleaser v2 configuration for the enconvert CLI (bun builder).
+#
+# ── AUTHORITATIVE PATH ────────────────────────────────────────────────────────
+# The release pipeline of record is .github/workflows/release.yml, which builds
+# via scripts/build-binaries.ts, packages/attests/uploads with gh, and pushes
+# the Homebrew cask + Scoop manifest itself. This file is the SECONDARY path:
+#   * local snapshot builds:  goreleaser release --snapshot --clean
+#   * a fallback if the scripted workflow ever needs replacing wholesale
+# Reasons release.yml is primary (kept conservative on purpose):
+#   * The bun builder's target->{{ .Os }}/{{ .Arch }} normalization and the musl
+#     ABI template var have shifted between GoReleaser minors; a wrong mapping
+#     silently renames archives and breaks install.sh + the Scoop autoupdate URL.
+#   * Darwin re-signing (rcodesign) must happen BETWEEN compile and archive,
+#     which the workflow sequences explicitly.
+# If archive names produced here ever disagree with release.yml, release.yml's
+# names (enconvert_<ver>_<os>_<arch>[_musl].{tar.gz,zip}) win.
+#
+# ── AUTH (when running the publish phases from CI) ────────────────────────────
+#   * GITHUB_TOKEN         — release upload to enconvert/cli
+#   * TAP_GITHUB_TOKEN     — fine-grained PAT, contents:write on
+#                            enconvert/homebrew-tap AND enconvert/scoop-bucket
+version: 2
+
+project_name: enconvert
+
+before:
+  hooks:
+    - npm ci
+    # src/version.ts is a compile-time constant; it must match the tag.
+    - node scripts/sync-version.mjs
+
+builds:
+  - id: enconvert
+    builder: bun
+    main: ./src/cli.ts
+    binary: enconvert
+    # Same flag set as scripts/build-binaries.ts. No --windows-icon /
+    # --windows-version: unsupported when cross-compiling.
+    flags:
+      - --compile
+      - --bytecode
+      - --minify
+    env:
+      # Strip bun's own Mach-O signer (truncated SuperBlob in 1.3.12,
+      # oven-sh/bun#29120 -> SIGKILL on Apple Silicon). Darwin artifacts are
+      # re-signed with rcodesign afterwards; arm64 macOS requires at least an
+      # ad-hoc signature to run at all.
+      - BUN_NO_CODESIGN_MACHO_BINARY=1
+    # Bun-style target triples, passed through to `bun build --target=...`.
+    targets:
+      - bun-darwin-arm64
+      - bun-darwin-x64
+      - bun-linux-x64
+      - bun-linux-arm64
+      - bun-linux-x64-musl
+      - bun-linux-arm64-musl
+      - bun-windows-x64
+
+archives:
+  - id: default
+    ids: [enconvert]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    # Target naming contract (mirrored by install.sh, install.ps1, the cask and
+    # the Scoop manifest): enconvert_<version>_<os>_<arch>[_musl].<ext>
+    # CAUTION: verify {{ .Arch }} renders bun's "x64"/"arm64" (not "amd64") and
+    # that the musl ABI lands in the name on your GoReleaser version before
+    # trusting these archives — see the header note.
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Abi }}_{{ . }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - completions/*
+
+checksum:
+  name_template: "enconvert_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+release:
+  github:
+    owner: enconvert
+    name: cli
+  draft: false
+  prerelease: auto
+
+# Homebrew: cask, NOT the deprecated `brews:` formula — Homebrew's position is
+# that a precompiled upstream binary is cask territory, and Homebrew 5/6 added
+# Linux cask support for exactly this shape. Homebrew 6 tap-trust note: the
+# first `brew tap enconvert/tap` prompts the user to trust the tap (documented
+# in README.md).
+homebrew_casks:
+  - name: enconvert
+    binary: enconvert
+    repository:
+      owner: enconvert
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://enconvert.com/cli"
+    description: "Official Enconvert CLI — convert files, render URLs, and extract web data from your terminal"
+    license: "MIT"
+    commit_author:
+      name: enconvert-release-bot
+      email: support@enconvert.com
+    # Leave no trace on `brew uninstall --zap enconvert`.
+    zap:
+      trash:
+        - "~/.config/enconvert"
+        - "~/.cache/enconvert"
+        - "~/.local/state/enconvert"
+        - "~/.enconvert"
+
+# Scoop manifest for Windows. checkver/autoupdate are deliberately NOT emitted
+# here: GoReleaser (and release.yml) rewrite the manifest on every release, so
+# the bucket never needs to self-update. The scripted manifest in release.yml
+# DOES include checkver/autoupdate so the bucket also works standalone if a
+# release is ever cut without CI touching it.
+scoops:
+  - name: enconvert
+    repository:
+      owner: enconvert
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://enconvert.com/cli"
+    description: "Official Enconvert CLI — convert files, render URLs, and extract web data from your terminal"
+    license: MIT
+    commit_author:
+      name: enconvert-release-bot
+      email: support@enconvert.com
+
+# ── Winget (manual first time — komac PR flow) ────────────────────────────────
+# microsoft/winget-pkgs submissions need a FORK of that repo plus a classic PAT
+# with public_repo scope; the first submission of a new package is reviewed by
+# humans and cannot be fully automated. Flow (run after the GitHub release is
+# live):
+#
+#   komac update Enconvert.Cli \
+#     --version <ver> \
+#     --urls https://github.com/enconvert/cli/releases/download/v<ver>/enconvert_<ver>_windows_x64.zip \
+#     --submit
+#
+# Once Enconvert.Cli exists in winget-pkgs, wire komac into release.yml (or
+# enable GoReleaser's winget section) with the fork + PAT. Until then this
+# stays a documented manual step so a missing PAT can never block a release.
+#
+# winget:
+#   - name: enconvert
+#     publisher: Enconvert
+#     package_identifier: Enconvert.Cli
+#     repository:
+#       owner: enconvert
+#       name: winget-pkgs
+#       token: "{{ .Env.WINGET_GITHUB_TOKEN }}"
+#       pull_request:
+#         enabled: true
+#         base:
+#           owner: microsoft
+#           name: winget-pkgs
+#           branch: master

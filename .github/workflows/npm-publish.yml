@@ -1,0 +1,72 @@
+# Publish @enconvert/cli to npm (with signed Sigstore provenance) on every
+# version tag. Kept SEPARATE from release.yml on purpose: npm ships the ~250 KB
+# bundled JS (never the 60+ MB bun binaries), its auth model is different
+# (OIDC vs GITHUB_TOKEN/PAT), and a binary-pipeline failure must never block
+# the npm channel or vice versa.
+#
+# AUTH MODEL: TOKENLESS via npm Trusted Publishing (GitHub OIDC). There is no
+# NODE_AUTH_TOKEN and no npm token secret anywhere — the id-token permission
+# below lets npm mint a short-lived credential per publish, and provenance is
+# generated automatically.
+#
+# ── One-time setup this workflow DEPENDS ON ───────────────────────────────────
+#   1. npmjs.com → package @enconvert/cli → Settings → Trusted Publisher:
+#        provider = GitHub Actions, org/user = enconvert, repo = cli,
+#        workflow filename = npm-publish.yml, environment = (blank).
+#      (For the FIRST ever publish the package must exist — create it with a
+#      manual `npm publish --access public` from a maintainer machine, then
+#      wire the trusted publisher.)
+#   2. github.com/enconvert/cli must be a PUBLIC repo — npm only generates
+#      provenance for a public repo + public package.
+#
+# ── Version pins ─────────────────────────────────────────────────────────────
+#   npm Trusted Publishing requires npm >= 11.5.1. Node 24 already BUNDLES
+#   npm 11.6+, so we use Node 24 and do NOT self-upgrade npm. (Running
+#   `npm install -g npm@latest` in place corrupts the bundled `sigstore`
+#   module and breaks `npm publish --provenance` with "Cannot find module
+#   'sigstore'".) The package still targets engines.node >=22.12.0 for
+#   CONSUMERS — only the publish RUNNER needs Node 24. Provenance requires a
+#   cloud runner (ubuntu-latest); self-hosted is unsupported.
+
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read # least privilege
+  id-token: write # REQUIRED for npm Trusted Publishing / provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24" # bundles npm 11.6+ (>= 11.5.1 for trusted publishing)
+          registry-url: "https://registry.npmjs.org" # writes ~/.npmrc so publish targets npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (tsdown → ./dist)
+        run: npm run build
+
+      - name: Verify the tag matches package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG  package.json=$PKG"
+          test "$TAG" = "$PKG" || { echo "::error::tag $TAG != package.json $PKG"; exit 1; }
+
+      # Under Trusted Publishing provenance is automatic; the explicit
+      # --provenance flag is a harmless, idempotent guarantee that
+      # dist.attestations gets written.
+      - name: Publish to npm with provenance
+        run: npm publish --provenance --access public
