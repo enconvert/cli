@@ -81,8 +81,22 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./package.json').version")"
-          echo "tag=$TAG package.json=$PKG"
-          test "$TAG" = "$PKG" || { echo "::error::tag $TAG != package.json $PKG"; exit 1; }
+          echo "tag=$TAG package.json=$PKG prerelease=$IS_PRERELEASE"
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            # rc dry runs: the tag's BASE version must match package.json
+            # (v1.0.0-rc.1 is a rehearsal for the 1.0.0 in package.json).
+            BASE="${TAG%%-*}"
+            test "$BASE" = "$PKG" || { echo "::error::prerelease tag base $BASE != package.json $PKG"; exit 1; }
+          else
+            test "$TAG" = "$PKG" || { echo "::error::tag $TAG != package.json $PKG"; exit 1; }
+          fi
+
+      - name: Align package version with prerelease tag
+        # So sync-version.mjs bakes the FULL rc version into src/version.ts and
+        # `enconvert --version` matches the archive names. CI-local only —
+        # nothing is committed.
+        if: env.IS_PRERELEASE == 'true'
+        run: npm version --no-git-tag-version "${GITHUB_REF_NAME#v}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

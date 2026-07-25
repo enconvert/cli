@@ -41,6 +41,10 @@ permissions:
 
 jobs:
   publish:
+    # Prerelease tags (any hyphen, e.g. v1.0.0-rc.1) are pipeline dry runs for
+    # the Release workflow — they never go to npm. Skip cleanly instead of
+    # failing the version guard red.
+    if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
