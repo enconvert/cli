@@ -67,6 +67,12 @@ jobs:
       HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE_PEM != '' && secrets.APPLE_PRIVATE_KEY_PEM != '' }}
       HAS_ASC_KEY: ${{ secrets.APPLE_APP_STORE_CONNECT_API_KEY_JSON != '' }}
       HAS_TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN != '' }}
+      # A hyphen in the tag (v1.0.0-rc.1) = prerelease: the GitHub release is
+      # marked prerelease (so `releases/latest/download/` — and therefore the
+      # get.enconvert.com Worker — keeps serving the previous stable) and the
+      # Homebrew/Scoop channels are NOT updated. npm-publish.yml's version
+      # guard independently blocks rc tags unless package.json matches.
+      IS_PRERELEASE: ${{ contains(github.ref_name, '-') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -252,17 +258,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER="${GITHUB_REF_NAME#v}"
-          gh release create "$GITHUB_REF_NAME" \
+          EXTRA_FLAGS=""
+          if [ "$IS_PRERELEASE" = "true" ]; then EXTRA_FLAGS="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" $EXTRA_FLAGS \
             --title "enconvert $VER" \
             --generate-notes \
             --notes "Standalone binaries for macOS, Linux (glibc + musl) and Windows. Verify with \`enconvert_${VER}_checksums.txt\` or \`gh attestation verify --repo enconvert/cli\`. See CHANGELOG.md for details." \
             dist-archives/*
 
       # install.sh + the latest-version pointer double as release assets AND as
-      # the files get.enconvert.com serves (see one-time setup #4 — the droplet
-      # copy is deployed outside CI). install.sh and the update notifier both
-      # read latest-version, so it must contain the bare semver, newline, and
-      # nothing else.
+      # the files the get.enconvert.com Worker serves via
+      # releases/latest/download/ (see one-time setup #4 and infra/get-worker/).
+      # install.sh and the update notifier both read latest-version, so it must
+      # contain the bare semver, newline, and nothing else.
       - name: Upload install script and latest-version pointer
         env:
           GH_TOKEN: ${{ github.token }}
@@ -277,7 +285,7 @@ jobs:
       # the whole pipeline has a single build path and the manifests are plain
       # files anyone can hotfix in the tap/bucket repos.
       - name: Update Homebrew tap and Scoop bucket
-        if: env.HAS_TAP_TOKEN == 'true'
+        if: env.HAS_TAP_TOKEN == 'true' && env.IS_PRERELEASE != 'true'
         env:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         run: |
