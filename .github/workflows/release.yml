@@ -120,6 +120,10 @@ jobs:
       - name: Typecheck and test
         run: |
           npm run typecheck
+          # The test harness spawns dist/enconvert.js — build the JS bundle
+          # first (same order as ci.yml). This also bakes the (possibly
+          # rc-aligned) version into src/version.ts before the binary build.
+          npm run build
           npm test
 
       # Completions ship inside every archive. Guarded because the generator
