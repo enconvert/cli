@@ -1,0 +1,21 @@
+# Cloudflare Worker config for get.enconvert.com.
+#
+# Deploy (from this directory, with the Cloudflare account that owns the
+# enconvert.com zone):
+#
+#   npx wrangler@latest login
+#   npx wrangler@latest deploy
+#
+# `custom_domain = true` makes Cloudflare create the get.enconvert.com DNS
+# record and route automatically on deploy — no manual DNS work.
+name = "enconvert-get"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# Never expose the *.workers.dev URL — the only supported entry point is the
+# custom domain (install docs, checksums and the update notifier all pin it).
+workers_dev = false
+
+routes = [
+  { pattern = "get.enconvert.com", custom_domain = true }
+]

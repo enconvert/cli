@@ -33,11 +33,12 @@
 #   2. Repo secret TAP_GITHUB_TOKEN (see auth model above).
 #   3. (later) Apple Developer ID Application cert exported as PEM pair +
 #      App Store Connect API key JSON, as the three APPLE_* secrets.
-#   4. get.enconvert.com (DO droplet behind Cloudflare) serves copies of
-#      install.sh, install.ps1 and latest-version. Deploy there is OUT of CI's
-#      hands: after a release, copy the three files from the release assets to
-#      the droplet (or point the vhost at the GitHub release URLs). That host
-#      MUST be exempt from Cloudflare Bot Fight Mode / Managed Challenge — a
+#   4. get.enconvert.com is a Cloudflare Worker (infra/get-worker/) that
+#      proxies install.sh, install.ps1 and latest-version straight from the
+#      LATEST release's assets — publishing a release updates it automatically
+#      (5-minute edge cache), no per-release deploy. One-time:
+#      `cd infra/get-worker && npx wrangler deploy`. That hostname MUST be
+#      exempt from Cloudflare Bot Fight Mode / Managed Challenge — a
 #      challenged `curl | sh` pipes an HTML blob into the user's shell
 #      (2026-07-16 api.enconvert.com incident).
 #   5. Winget is NOT automated here — first submission of Enconvert.Cli to
