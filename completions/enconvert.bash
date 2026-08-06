@@ -163,7 +163,7 @@ _enconvert() {
       ;;
     "perceive")
       subs="get batch"
-      flags="--output-dir -O --url-only --output --extract --schema-file --wait-for --wait-timeout-ms --js-code --viewport --mobile --respect-robots --cache-mode --block-resource --header --cookie --basic-auth --pdf-page-size --pdf-orientation --pdf-margin --pdf-scale --pdf-grayscale --pdf-header --pdf-footer --pdf-header-height --pdf-footer-height --pdf-page-width --pdf-page-height --help -h"
+      flags="--output-dir -O --output-file -o --url-only --direct-download --output --extract --schema-file --wait-for --wait-timeout-ms --js-code --viewport --mobile --respect-robots --full-page --cache-mode --block-resource --header --cookie --basic-auth --pdf-page-size --pdf-orientation --pdf-margin --pdf-scale --pdf-grayscale --pdf-header --pdf-footer --pdf-header-height --pdf-footer-height --pdf-page-width --pdf-page-height --help -h"
       ;;
     "perceive get")
       subs=""
@@ -171,7 +171,7 @@ _enconvert() {
       ;;
     "perceive batch")
       subs="get cancel"
-      flags="--input-file --output-mode --output-file -o --output-dir -O --output --extract --schema-file --wait-for --wait-timeout-ms --js-code --viewport --mobile --respect-robots --cache-mode --block-resource --header --cookie --basic-auth --pdf-page-size --pdf-orientation --pdf-margin --pdf-scale --pdf-grayscale --pdf-header --pdf-footer --pdf-header-height --pdf-footer-height --pdf-page-width --pdf-page-height --wait --no-wait --poll-interval --wait-timeout --exit-status --url-only --help -h"
+      flags="--input-file --output-mode --output-file -o --output-dir -O --output --extract --schema-file --wait-for --wait-timeout-ms --js-code --viewport --mobile --respect-robots --full-page --cache-mode --block-resource --header --cookie --basic-auth --pdf-page-size --pdf-orientation --pdf-margin --pdf-scale --pdf-grayscale --pdf-header --pdf-footer --pdf-header-height --pdf-footer-height --pdf-page-width --pdf-page-height --wait --no-wait --poll-interval --wait-timeout --exit-status --url-only --help -h"
       ;;
     "perceive batch get")
       subs=""

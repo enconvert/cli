@@ -5,6 +5,7 @@ import { openAsBlob } from "node:fs";
 import { basename } from "node:path";
 import type { Context } from "../config/resolve.js";
 import { statInput } from "../util/files.js";
+import { CliError, EXIT } from "./errors.js";
 import { apiRequest } from "./http.js";
 
 export interface OutputArtifact {
@@ -23,6 +24,8 @@ export interface PerceiveResponse {
   url_final?: string;
   content_hash?: string;
   render_quality?: number;
+  status_code?: number | null;
+  deductions?: Record<string, number>;
   cache_hit?: boolean;
   outputs?: Record<string, OutputArtifact>;
   structured?: unknown;
@@ -171,6 +174,27 @@ async function postV2<T>(ctx: Context, path: string, body: Record<string, unknow
 
 export function perceive(ctx: Context, body: Record<string, unknown>): Promise<PerceiveResponse> {
   return postV2(ctx, "/v2/perceive", body);
+}
+
+/**
+ * POST /v2/perceive with direct_download: the response body IS the artifact
+ * bytes; metadata rides in X-* headers instead of a JSON envelope.
+ */
+export async function perceiveDirect(
+  ctx: Context,
+  body: Record<string, unknown>,
+): Promise<{ bytes: Uint8Array; headers: Headers }> {
+  const res = await apiRequest(ctx, {
+    method: "POST",
+    path: "/v2/perceive",
+    jsonBody: body,
+    timeoutMs: Math.max(ctx.timeoutMs, V2_TIMEOUT_FLOOR_MS),
+    rawBody: true,
+  });
+  if (res.bytes === undefined) {
+    throw new CliError("direct download returned no bytes", { exitCode: EXIT.SERVER_FAILURE });
+  }
+  return { bytes: res.bytes, headers: res.headers };
 }
 
 export async function perceiveGet(ctx: Context, operationId: string): Promise<PerceiveResponse> {

@@ -5,6 +5,25 @@ All notable changes to the Enconvert CLI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-06
+
+### Added
+
+- `perceive --full-page` (also on `perceive batch`) sends
+  `only_main_content: false` to keep navigation and site chrome; the gateway
+  now strips site chrome from `markdown`/`main_content` by default.
+- `perceive --direct-download` streams the single requested `--output`
+  artifact's bytes as the response body, written to `-o/--output-file`
+  (`-` for stdout) or a URL-derived filename.
+- The perceive summary line now includes the source page's HTTP status
+  (`source status: 404`) and any render-quality `deductions` reported by the
+  gateway.
+
+### Removed
+
+- The `markdown_fit` output (gateway removed it) — use `markdown`, which is
+  main-content-only by default; opt out with `--full-page`.
+
 ## [1.0.0] - 2026-07-25
 
 First public release.

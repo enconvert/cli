@@ -10,8 +10,9 @@ import { EXIT, inputNotFoundError, usageError } from "../api/errors.js";
 import * as v2 from "../api/v2.js";
 import type { Context } from "../config/resolve.js";
 import { printJson, printJsonl } from "../output/json.js";
-import { info, out, warn } from "../output/streams.js";
+import { info, out, outBytes, warn } from "../output/streams.js";
 import { addWaitOptions, collectRepeatable, contextFor } from "../program.js";
+import { atomicWriteFile } from "../util/files.js";
 import { waitForPerceiveBatch } from "../util/poll.js";
 import {
   csvList,
@@ -26,7 +27,6 @@ import {
 
 const OUTPUT_NAMES = [
   "markdown",
-  "markdown_fit",
   "html_cleaned",
   "html_raw",
   "screenshot",
@@ -72,6 +72,7 @@ interface PerceiveOptionFlags {
   viewport?: string;
   mobile?: boolean;
   respectRobots?: boolean;
+  fullPage?: boolean;
   cacheMode?: string;
   blockResource?: string;
   header: string[];
@@ -92,7 +93,9 @@ interface PerceiveOptionFlags {
 
 interface PerceiveCmdOpts extends PerceiveOptionFlags {
   outputDir?: string;
+  outputFile?: string;
   urlOnly?: boolean;
+  directDownload?: boolean;
 }
 
 interface BatchCmdOpts extends PerceiveOptionFlags {
@@ -240,6 +243,7 @@ function addPerceiveOptions(cmd: Command): Command {
     .option("--viewport <WxH>", "viewport size, e.g. 1440x900 (width 320-3840, height 240-2160)")
     .option("--mobile", "emulate a mobile device")
     .option("--respect-robots", "honour robots.txt")
+    .option("--full-page", "keep the full page content including navigation and site chrome (server default strips it)")
     .addOption(
       new Option("--cache-mode <mode>", "render cache behaviour (server default: enabled)").choices([
         "enabled",
@@ -285,6 +289,8 @@ function buildPerceiveOptions(opts: PerceiveOptionFlags): Record<string, unknown
   if (opts.viewport !== undefined) body["viewport"] = parseViewport(opts.viewport);
   if (opts.mobile === true) body["mobile"] = true;
   if (opts.respectRobots === true) body["respect_robots"] = true;
+  // The server default is main-content-only; only the explicit opt-out is worth sending.
+  if (opts.fullPage === true) body["only_main_content"] = false;
   if (opts.cacheMode !== undefined) body["cache_mode"] = opts.cacheMode;
   if (opts.blockResource !== undefined) {
     body["block_resources"] = validatedList(opts.blockResource, RESOURCE_TYPES, "--block-resource");
@@ -336,8 +342,13 @@ async function renderPerceive(
   for (const w of res.warnings ?? []) warn(w);
   if (res.error !== undefined) warn(`server reported: ${res.error}`);
   const quality = res.render_quality !== undefined ? `, quality ${res.render_quality.toFixed(2)}` : "";
+  const sourceStatus = res.status_code !== undefined && res.status_code !== null ? `, source status: ${res.status_code}` : "";
   const cache = res.cache_hit === true ? ", cache hit" : "";
-  info(`perceive ${res.operation_id}: ${res.status}${quality}${cache}`);
+  info(`perceive ${res.operation_id}: ${res.status}${quality}${sourceStatus}${cache}`);
+  const deductions = Object.entries(res.deductions ?? {});
+  if (deductions.length > 0) {
+    info(`deductions: ${deductions.map(([name, value]) => `${name} ${value.toFixed(2)}`).join(", ")}`);
+  }
   if (res.status === "queued" || res.status === "processing") {
     info(`still running; check later with: enconvert perceive get ${res.operation_id}`);
   }
@@ -365,6 +376,50 @@ async function renderPerceive(
   if (opts.showStructured === true && res.structured !== undefined) {
     printJson(res.structured);
   }
+}
+
+/**
+ * --direct-download: the POST response body IS the single artifact's bytes
+ * (no JSON envelope, no presigned URL); metadata rides in X-* headers.
+ */
+async function runDirectDownload(
+  ctx: Context,
+  body: Record<string, unknown>,
+  opts: PerceiveCmdOpts,
+): Promise<void> {
+  const outputs = body["outputs"] as string[] | undefined;
+  if (outputs === undefined || outputs.length !== 1) {
+    throw usageError("--direct-download needs exactly one --output artifact", {
+      help: ["e.g. --direct-download --output pdf -o page.pdf"],
+    });
+  }
+  if (opts.urlOnly === true) throw usageError("--direct-download streams bytes; drop --url-only");
+  if (opts.outputDir !== undefined) {
+    throw usageError("--direct-download writes a single artifact; use -o <path>, not -O <dir>");
+  }
+  body["direct_download"] = true;
+  const { bytes, headers } = await v2.perceiveDirect(ctx, body);
+  const warningsCount = Number(headers.get("x-warnings-count") ?? 0);
+  if (warningsCount > 0) {
+    warn(`server reported ${warningsCount} warning(s); re-run without --direct-download for details`);
+  }
+  if (opts.outputFile === "-") {
+    outBytes(bytes);
+    return;
+  }
+  const output = outputs[0]!;
+  const derived = `${slugForUrl(body["url"] as string)}.${output}.${extForOutput(output)}`;
+  const dest = resolveArtifactPath(
+    ctx,
+    opts.outputFile !== undefined ? { output: opts.outputFile } : {},
+    derived,
+  );
+  if (dest === null) {
+    info(`skipping existing ${derived}`);
+    return;
+  }
+  atomicWriteFile(dest, bytes);
+  out(dest);
 }
 
 async function renderBatch(
@@ -437,7 +492,9 @@ export function registerPerceiveCommands(program: Command): void {
     .description("Render one URL and capture outputs: markdown, HTML, screenshots, PDF, links, structured data (POST /v2/perceive).")
     .argument("<url>", "page URL (http:// or https://)")
     .option("-O, --output-dir <dir>", "download every produced artifact into this directory")
-    .option("--url-only", "print only the presigned artifact URLs");
+    .addOption(new Option("-o, --output-file <path>", "direct download: write the artifact to this path ('-' streams bytes to stdout)"))
+    .option("--url-only", "print only the presigned artifact URLs")
+    .option("--direct-download", "stream the artifact's bytes as the response body (needs exactly one --output)");
   addPerceiveOptions(perceive);
   perceive
     .addHelpText(
@@ -447,6 +504,7 @@ Examples:
   $ enconvert perceive https://example.com --output markdown,links,screenshot -O ./out
   $ enconvert perceive https://example.com --extract tables,metadata --schema-file s.json --json
   $ enconvert perceive https://example.com --output pdf --pdf-page-size Letter --url-only
+  $ enconvert perceive https://example.com --direct-download --output markdown -o page.md
 `,
     )
     .action(async (url: string, opts: PerceiveCmdOpts, cmdObj: Command) => {
@@ -455,6 +513,10 @@ Examples:
         url: requireHttpUrl(url),
         ...buildPerceiveOptions(opts),
       };
+      if (opts.directDownload === true) {
+        await runDirectDownload(ctx, body, opts);
+        return;
+      }
       const res = await v2.perceive(ctx, body);
       const requestedOutputs = body["outputs"] as string[] | undefined;
       const showStructured =

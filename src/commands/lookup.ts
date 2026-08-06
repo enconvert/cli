@@ -14,7 +14,6 @@ import { csvList, emitJson } from "./_shared.js";
 // OutputName enum shared with perceive (enrich reuses it).
 const OUTPUT_NAMES = [
   "markdown",
-  "markdown_fit",
   "html_cleaned",
   "html_raw",
   "screenshot",

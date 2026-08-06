@@ -25,6 +25,8 @@ export interface ApiRequestOptions {
   retries?: number;
   /** Do not require an API key (e.g. GET /health). */
   anonymous?: boolean;
+  /** Return the 2xx body as raw bytes even when it is JSON (direct_download artifacts). */
+  rawBody?: boolean;
   /** Return the error response instead of throwing (for `enconvert api -i`). */
   allowErrorResponse?: boolean;
 }
@@ -159,7 +161,7 @@ export async function apiRequest(ctx: Context, opts: ApiRequestOptions): Promise
       throw apiError;
     }
 
-    if (isJson) {
+    if (isJson && opts.rawBody !== true) {
       const json: unknown = await response.json();
       return { status: response.status, headers: response.headers, json, bytes: undefined, durationMs };
     }

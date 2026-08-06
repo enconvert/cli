@@ -71,6 +71,7 @@ test("test_full_flags_golden_body_contains_exactly_the_user_set_fields", async (
       "--viewport", "1440x900",
       "--mobile",
       "--respect-robots",
+      "--full-page",
       "--cache-mode", "bypass",
       "--block-resource", "image,font",
       "--header", "X-A: 1",
@@ -95,6 +96,7 @@ test("test_full_flags_golden_body_contains_exactly_the_user_set_fields", async (
     viewport: { width: 1440, height: 900 },
     mobile: true,
     respect_robots: true,
+    only_main_content: false,
     cache_mode: "bypass",
     block_resources: ["image", "font"],
     headers: { "X-A": "1" },
@@ -191,6 +193,85 @@ test("test_output_dir_downloads_artifacts_with_sensible_extensions", async (t) =
   assert.deepEqual(readFileSync(pngPath), pngBytes);
   // One absolute path per line on stdout.
   assert.deepEqual(res.stdout.trimEnd().split("\n").sort(), [mdPath, pngPath].sort());
+});
+
+test("test_direct_download_streams_artifact_bytes_to_stdout", async (t) => {
+  const gw = await startMockGateway();
+  t.after(() => gw.close());
+  const mdBytes = "# direct markdown\n";
+  gw.route("POST /v2/perceive", (_req, res) => {
+    res.writeHead(200, {
+      "content-type": "text/markdown",
+      "x-operation-id": "per_direct",
+      "x-warnings-count": "0",
+    });
+    res.end(mdBytes);
+  });
+
+  const res = await runCli(
+    ["perceive", URL_A, "--direct-download", "--output", "markdown", "-o", "-"],
+    { env: envFor(gw) },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(res.stdout, mdBytes, "-o - must emit the artifact bytes verbatim, nothing else");
+  assert.deepEqual(gw.requests[0]!.json, {
+    url: URL_A,
+    outputs: ["markdown"],
+    direct_download: true,
+  });
+});
+
+test("test_direct_download_json_artifact_bytes_pass_through_verbatim", async (t) => {
+  const gw = await startMockGateway();
+  t.after(() => gw.close());
+  // Deliberately odd formatting: a parse/re-stringify round-trip would destroy it.
+  const linkBytes = '{"links": [\n    "https://a.com"\n]}';
+  gw.route("POST /v2/perceive", (_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(linkBytes);
+  });
+
+  const res = await runCli(
+    ["perceive", URL_A, "--direct-download", "--output", "links", "-o", "-"],
+    { env: envFor(gw) },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(res.stdout, linkBytes, "JSON artifacts must stream byte-for-byte, not re-encoded");
+});
+
+test("test_direct_download_without_single_output_exits_2_without_any_request", async (t) => {
+  const gw = await startMockGateway();
+  t.after(() => gw.close());
+  gw.json("POST /v2/perceive", 200, completedPerceive());
+
+  const res = await runCli(["perceive", URL_A, "--direct-download"], { env: envFor(gw) });
+
+  assert.equal(res.code, 2);
+  assert.equal(gw.requests.length, 0, "usage validation must happen offline");
+  assert.match(res.stderr, /--direct-download needs exactly one --output artifact/);
+});
+
+test("test_direct_download_writes_output_file_and_prints_path", async (t) => {
+  const gw = await startMockGateway();
+  t.after(() => gw.close());
+  const pdfBytes = "%PDF-1.4 direct-download-payload";
+  gw.route("POST /v2/perceive", (_req, res) => {
+    res.writeHead(200, { "content-type": "application/pdf" });
+    res.end(pdfBytes);
+  });
+
+  const home = scratchDir();
+  const dest = join(home, "page.pdf");
+  const res = await runCli(
+    ["perceive", URL_A, "--direct-download", "--output", "pdf", "-o", dest],
+    { env: envFor(gw), home },
+  );
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(res.stdout, `${dest}\n`);
+  assert.equal(readFileSync(dest, "utf8"), pdfBytes);
 });
 
 test("test_perceive_get_hits_get_operation_path", async (t) => {
