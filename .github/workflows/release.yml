@@ -355,7 +355,7 @@ jobs:
             end
 
             name "enconvert"
-            desc "Official Enconvert CLI — convert files, render URLs, and extract web data"
+            desc "Web and file reading for AI agents, with a render_quality score on every read"
             homepage "https://enconvert.com/cli"
 
             binary "enconvert"
@@ -381,7 +381,7 @@ jobs:
           cat > /tmp/scoop-bucket/bucket/enconvert.json <<'EOF'
           {
               "version": "__VERSION__",
-              "description": "Official Enconvert CLI — convert files, render URLs, and extract web data from your terminal",
+              "description": "Enconvert CLI: web and file reading for AI agents, with a render_quality score on every web read, plus 45 file-conversion routes",
               "homepage": "https://enconvert.com/cli",
               "license": "MIT",
               "architecture": {

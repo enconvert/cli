@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { USER_AGENT } from "../src/version.js";
 
 interface SeedUpload {
   endpoint: string;
@@ -155,7 +156,7 @@ async function loadOpenApi(): Promise<OpenApiDoc> {
     return JSON.parse(readFileSync(process.argv[argIdx + 1]!, "utf8")) as OpenApiDoc;
   }
   const base = (process.env["ENCONVERT_API_URL"] ?? "https://api.enconvert.com").replace(/\/+$/, "");
-  const res = await fetch(`${base}/openapi.json`, { signal: AbortSignal.timeout(30_000) });
+  const res = await fetch(`${base}/openapi.json`, { signal: AbortSignal.timeout(30_000), headers: { "user-agent": USER_AGENT } });
   if (!res.ok) throw new Error(`GET ${base}/openapi.json -> HTTP ${res.status}`);
   return (await res.json()) as OpenApiDoc;
 }

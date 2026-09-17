@@ -26,6 +26,10 @@ export interface PerceiveResponse {
   render_quality?: number;
   status_code?: number | null;
   deductions?: Record<string, number>;
+  /** Content-free block: HTTP 200, empty outputs, not billed. */
+  is_blocked?: boolean;
+  /** False when the read was not charged (blocked, http_error, login_wall). */
+  billed?: boolean;
   cache_hit?: boolean;
   outputs?: Record<string, OutputArtifact>;
   structured?: unknown;

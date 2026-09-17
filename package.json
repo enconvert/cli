@@ -1,7 +1,7 @@
 {
   "name": "@enconvert/cli",
-  "version": "1.1.0",
-  "description": "The official Enconvert CLI. Convert files, render URLs, and extract web data from your terminal.",
+  "version": "1.1.1",
+  "description": "The official Enconvert CLI: web and file reading for AI agents, with a render_quality score on every web read. Full v2 web-data surface, URL rendering and 45 file-conversion routes from your terminal.",
   "keywords": [
     "enconvert",
     "cli",

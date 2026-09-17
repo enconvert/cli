@@ -1,6 +1,6 @@
 # enconvert
 
-The official **[Enconvert](https://enconvert.com) CLI** — convert files, render URLs, and extract web data from your terminal. A thin, fast client for the Enconvert API: 46 file-conversion routes, URL/site-to-PDF/screenshot/markdown rendering, and the full v2 web-data surface (perceive, discover, lookup, distill, ingest), with `gh`-grade plumbing — `--json`, profiles, shell completion, documented exit codes, and a raw `api` passthrough that reaches every endpoint.
+The official **[Enconvert](https://enconvert.com) CLI** — web and file reading for AI agents, from your terminal. Every web read returns a `render_quality` score (0.0-1.0) with named deductions, so a blocked, challenge or empty-SPA page is flagged (and not billed) instead of mistaken for content. A thin, fast client for the Enconvert API: the full v2 web-data surface (perceive, discover, lookup, distill, ingest), URL/site-to-PDF/screenshot/markdown rendering, and 45 file-conversion routes plus image compression, with `gh`-grade plumbing — `--json`, profiles, shell completion, documented exit codes, and a raw `api` passthrough that reaches every endpoint.
 
 ## Install
 
@@ -88,7 +88,7 @@ The contract: **stdout carries the artifact or the machine payload — nothing e
 - `-o -` is the only way to get raw bytes on stdout (single input only).
 - `--json` prints the gateway's response verbatim; `--jq <expr>` filters it with a bundled jq (no jq binary needed); `--jsonl` streams NDJSON for batch commands.
 - `--url-only` prints the presigned URL and skips the download.
-- Exit codes are documented, stable, and append-only — run `enconvert help exit-codes` or see the [docs](https://enconvert.com/docs/cli/exit-codes). Highlights: `2` usage, `4` auth, `5` rate limited, `6` plan/quota, `9` job failed (with `--exit-status`), `10` network/timeout.
+- Exit codes are documented, stable, and append-only — run `enconvert help exit-codes` or see the [docs](https://enconvert.com/docs/guides/integrations/cli#troubleshooting). Highlights: `2` usage, `4` auth, `5` rate limited, `6` plan/quota, `9` job failed (with `--exit-status`), `10` network/timeout.
 
 ## Commands
 
@@ -170,7 +170,7 @@ Issues and PRs welcome at [enconvert/cli](https://github.com/enconvert/cli). Lic
 
 ## Links
 
-- **Docs** — https://enconvert.com/docs/cli
+- **Docs** — https://enconvert.com/docs/guides/integrations/cli
 - **Dashboard / API keys** — https://enconvert.com/dashboard
 - **MCP server** — https://www.npmjs.com/package/@enconvert/mcp
 - **Node SDK** — https://www.npmjs.com/package/@enconvert/node-sdk

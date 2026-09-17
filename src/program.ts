@@ -66,7 +66,7 @@ function increaseVerbosity(_value: string, previous: number | undefined): number
 export function buildProgram(): Command {
   const program = new Command("enconvert");
   program
-    .description("Convert files, render URLs, and extract web data from your terminal.\nDocs: https://enconvert.com/docs/cli")
+    .description("Convert files, render URLs, and extract web data from your terminal.\nDocs: https://enconvert.com/docs/guides/integrations/cli")
     .version(VERSION, "-V, --version", "print the CLI version")
     .helpOption("-h, --help", "show help")
     .showSuggestionAfterError(true)

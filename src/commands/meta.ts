@@ -12,7 +12,7 @@ import { VERSION } from "../version.js";
 import { contextFor } from "../program.js";
 import { emitJson } from "./_shared.js";
 
-const DOCS_URL = "https://enconvert.com/docs/cli";
+const DOCS_URL = "https://enconvert.com/docs/guides/integrations/cli";
 const DASHBOARD_USAGE_URL = "https://enconvert.com/dashboard/usage";
 
 const OPEN_TARGETS: Record<string, string> = {

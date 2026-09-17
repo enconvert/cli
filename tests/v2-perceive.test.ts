@@ -155,6 +155,28 @@ test("test_completed_response_prints_artifact_urls_on_stdout", async (t) => {
   assert.match(res.stderr, /perceive per_ab12cd34: completed/);
 });
 
+test("test_blocked_unbilled_read_is_flagged_on_stderr_with_nothing_on_stdout", async (t) => {
+  const gw = await startMockGateway();
+  t.after(() => gw.close());
+  gw.json(
+    "POST /v2/perceive", 200,
+    completedPerceive({
+      render_quality: 0.2,
+      deductions: { anti_bot_challenge: 0.6 },
+      is_blocked: true,
+      billed: false,
+      warnings: ["content-free block detected"],
+    }),
+  );
+
+  const res = await runCli(["perceive", URL_A], { env: envFor(gw) });
+
+  assert.equal(res.code, 0, res.stderr);
+  assert.equal(res.stdout, "", "a blocked read has no artifacts to print");
+  assert.match(res.stderr, /perceive per_ab12cd34: completed, quality 0\.20, blocked, not billed/);
+  assert.match(res.stderr, /deductions: anti_bot_challenge 0\.60/);
+});
+
 test("test_output_dir_downloads_artifacts_with_sensible_extensions", async (t) => {
   const gw = await startMockGateway();
   t.after(() => gw.close());

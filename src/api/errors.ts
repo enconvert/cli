@@ -55,7 +55,7 @@ export class CliError extends Error {
     this.docs =
       opts.docs ??
       (this.exitCode >= 1 && this.exitCode <= 10
-        ? `https://enconvert.com/docs/errors/${this.id}`
+        ? `https://enconvert.com/docs/reference/errors`
         : undefined);
   }
 }

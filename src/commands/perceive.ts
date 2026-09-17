@@ -342,9 +342,11 @@ async function renderPerceive(
   for (const w of res.warnings ?? []) warn(w);
   if (res.error !== undefined) warn(`server reported: ${res.error}`);
   const quality = res.render_quality !== undefined ? `, quality ${res.render_quality.toFixed(2)}` : "";
+  const blocked = res.is_blocked === true ? ", blocked" : "";
+  const billing = res.billed === false ? ", not billed" : "";
   const sourceStatus = res.status_code !== undefined && res.status_code !== null ? `, source status: ${res.status_code}` : "";
   const cache = res.cache_hit === true ? ", cache hit" : "";
-  info(`perceive ${res.operation_id}: ${res.status}${quality}${sourceStatus}${cache}`);
+  info(`perceive ${res.operation_id}: ${res.status}${quality}${blocked}${billing}${sourceStatus}${cache}`);
   const deductions = Object.entries(res.deductions ?? {});
   if (deductions.length > 0) {
     info(`deductions: ${deductions.map(([name, value]) => `${name} ${value.toFixed(2)}`).join(", ")}`);

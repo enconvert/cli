@@ -1,7 +1,9 @@
 // Presigned-URL downloads: stream to disk via .tmp + atomic rename, progress
 // on stderr, or raw bytes to stdout for `-o -`.
 //
-// Presigned URLs are plain storage URLs — no X-API-Key header is sent.
+// Presigned URLs are plain storage URLs — no X-API-Key header is sent. The
+// CLI User-Agent still is: storage ignores it, and any download the gateway
+// serves itself (direct/zip artifacts) then attributes to the cli surface.
 import { createWriteStream } from "node:fs";
 import { rename, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -11,13 +13,14 @@ import type { Context } from "../config/resolve.js";
 import { startProgress } from "../output/progress.js";
 import { debug } from "../output/streams.js";
 import { ensureDir } from "../util/files.js";
+import { USER_AGENT } from "../version.js";
 import { formatBytes } from "./errors.js";
 import { networkError, CliError, EXIT } from "./errors.js";
 
 async function openDownload(ctx: Context, url: string): Promise<Response> {
   let response: Response;
   try {
-    response = await fetch(url, { signal: AbortSignal.timeout(ctx.timeoutMs) });
+    response = await fetch(url, { signal: AbortSignal.timeout(ctx.timeoutMs), headers: { "user-agent": USER_AGENT } });
   } catch (e) {
     const cause = e instanceof Error ? e : new Error(String(e));
     throw networkError("download failed", { details: [cause.message], cause });

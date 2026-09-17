@@ -5,6 +5,17 @@ All notable changes to the Enconvert CLI are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-09-17
+
+### Changed
+
+- The perceive summary line now flags a content-free block (`blocked`) and an
+  uncharged read (`not billed`), from the gateway's `is_blocked` and `billed`
+  fields. A blocked read is a normal 200 with empty outputs, so nothing is
+  printed on stdout.
+- README and package description lead with web and file reading for AI
+  agents and the `render_quality` score on every read.
+
 ## [1.1.0] - 2026-08-06
 
 ### Added

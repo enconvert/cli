@@ -5,7 +5,7 @@
 //       10,000 conversions/month on the Pro plan; used 10,000.
 //
 //       help: upgrade at https://enconvert.com/pricing
-//       docs: https://enconvert.com/docs/errors/E006
+//       docs: https://enconvert.com/docs/reference/errors
 import { CliError } from "../api/errors.js";
 import { c } from "./color.js";
 import { errLine } from "./streams.js";
